@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="login-page">
+    <!-- Animated Background Blobs -->
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    
+    <div class="glass-card login-card">
+        <h1>Welcome Back ✨</h1>
+        <p class="subtitle">Access your premium cafe dashboard</p>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-messages">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <!-- Navigation Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('login')">Login</button>
+            <button class="tab-btn" onclick="switchTab('register')">Sign Up</button>
+        </div>
+
+        <form method="POST" id="loginForm" class="auth-form active-form">
+            <input type="hidden" name="action" value="login">
+            <div class="input-group">
+                <span class="icon">👤</span>
+                <input type="text" name="username" placeholder="Username" required value="admin">
+            </div>
+            <div class="input-group">
+                <span class="icon">🔒</span>
+                <input type="password" name="password" placeholder="Password" required value="admin123">
+            </div>
+            <button type="submit" class="btn btn-primary">LOGIN</button>
+        </form>
+
+        <form method="POST" id="registerForm" class="auth-form" style="display: none;">
+            <input type="hidden" name="action" value="register">
+            <div class="input-group">
+                <span class="icon">👤</span>
+                <input type="text" name="username" placeholder="Choose Username" required>
+            </div>
+            <div class="input-group">
+                <span class="icon">🔒</span>
+                <input type="password" name="password" placeholder="Choose Password" required>
+            </div>
+            <div class="input-group">
+                <span class="icon">🎭</span>
+                <select name="role">
+                    <option value="Staff">Staff</option>
+                    <option value="Admin">Admin</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-success">SIGN UP</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function switchTab(tab) {
+        let btns = document.querySelectorAll('.tab-btn');
+        let forms = document.querySelectorAll('.auth-form');
+        
+        btns.forEach(b => b.classList.remove('active'));
+        forms.forEach(f => f.style.display = 'none');
+        
+        if (tab === 'login') {
+            btns[0].classList.add('active');
+            document.getElementById('loginForm').style.display = 'flex';
+        } else {
+            btns[1].classList.add('active');
+            document.getElementById('registerForm').style.display = 'flex';
+        }
+    }
+</script>
+{% endblock %}

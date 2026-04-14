@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2>☕ Cafe PRO</h2>
+        </div>
+        
+        <div class="user-profile">
+            <div class="avatar">👤</div>
+            <div class="user-details">
+                <p class="name">{{ user.username }}</p>
+                <p class="role">{{ user.role }}</p>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <button class="nav-btn active" onclick="showSection('order-section', this)">🛍️ Take Order</button>
+            {% if user.role == "Admin" %}
+                <button class="nav-btn" onclick="showSection('menu-section', this)">📝 Manage Menu</button>
+                <button class="nav-btn" onclick="showSection('sales-section', this)">📈 Sales History</button>
+            {% endif %}
+        </nav>
+        
+        <div class="sidebar-footer">
+            <a href="{{ url_for('logout') }}" class="nav-btn btn-danger">🚪 Logout</a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- 1. Take Order Section -->
+        <section id="order-section" class="content-section active">
+            <div class="order-grid">
+                <!-- Menu -->
+                <div class="menu-area">
+                    <div class="header-banner">
+                        <h1>Our Menu ✨</h1>
+                        <p>Select items to add to the cart.</p>
+                    </div>
+                    
+                    <div class="products-grid">
+                        {% for item in items %}
+                            <div class="product-card">
+                                <div class="product-icon">
+                                    {% if item[2] == 'Coffee' %}☕
+                                    {% elif item[2] == 'Snacks' %}🍟
+                                    {% elif item[2] == 'Desserts' %}🍰
+                                    {% else %}🍽️{% endif %}
+                                </div>
+                                <h3>{{ item[1] }}</h3>
+                                <p class="category">{{ item[2] }}</p>
+                                <p class="price">₹{{ "%.2f"|format(item[3]) }}</p>
+                                <!-- item: [id, name, cat, price] -->
+                                <button class="btn btn-outline" onclick="addToCart({{ item[0] }}, '{{ item[1] }}', '{{ item[2] }}', {{ item[3] }})">Add to Cart</button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Cart -->
+                <div class="cart-area">
+                    <div class="cart-glass">
+                        <h2>🛒 Current Order</h2>
+                        <div class="cart-items" id="cartItems">
+                            <p class="empty-cart-msg">Your cart is empty.</p>
+                        </div>
+                        <div class="cart-footer">
+                            <div class="total-row">
+                                <span>Total</span>
+                                <span id="cartTotal" class="total-amount">₹0.00</span>
+                            </div>
+                            <button class="btn btn-success checkout-btn" onclick="checkout()">Checkout & Print Receipt</button>
+                            <button class="btn btn-danger clear-btn" onclick="clearCart()">Clear Cart</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. Manage Menu Section -->
+        {% if user.role == "Admin" %}
+        <section id="menu-section" class="content-section" style="display: none;">
+            <div class="header-banner">
+                <h1>📝 Manage Menu</h1>
+                <p>Add or remove items from your cafe.</p>
+            </div>
+            
+            <div class="form-card glass-panel">
+                <form action="{{ url_for('add_item') }}" method="POST" class="inline-form">
+                    <input type="text" name="name" placeholder="Item Name" required>
+                    <input type="text" name="category" placeholder="Category (Coffee, Snacks, etc.)" required>
+                    <input type="number" step="0.01" name="price" placeholder="Price (e.g. 150)" required>
+                    <button type="submit" class="btn btn-primary">➕ Add Item</button>
+                </form>
+            </div>
+            
+            <div class="list-container glass-panel">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>Item Name</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td><strong>{{ item[1] }}</strong></td>
+                            <td><span class="badge">{{ item[2] }}</span></td>
+                            <td class="price-col">₹{{ "%.2f"|format(item[3]) }}</td>
+                            <td>
+                                <a href="{{ url_for('delete_item', item_id=item[0]) }}" class="btn btn-danger small-btn">🗑️ Delete</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 3. Sales Section -->
+        <section id="sales-section" class="content-section" style="display: none;">
+            <div class="header-banner">
+                <h1>📈 Sales History</h1>
+                <p>View latest transactions and revenue.</p>
+            </div>
+            
+            <div class="list-container glass-panel">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Date / Time</th>
+                            <th>Staff Member</th>
+                            <th>Total Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td>#{{ order[0] }}</td>
+                            <td>{{ order[2] }}</td>
+                            <td><div class="staff-badge">👤 {{ order[3] }}</div></td>
+                            <td class="price-col success-text">+₹{{ "%.2f"|format(order[1]) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        {% endif %}
+    </main>
+</div>
+
+<!-- Custom Notifications -->
+<div id="toast" class="toast"></div>
+
+<script>
+    let cart = [];
+    
+    function showSection(sectionId, btn) {
+        document.querySelectorAll('.content-section').forEach(s => s.style.display = 'none');
+        document.getElementById(sectionId).style.display = 'block';
+        
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+    
+    function addToCart(id, name, category, price) {
+        let existing = cart.find(i => i.id === id);
+        if (existing) {
+            existing.quantity += 1;
+        } else {
+            cart.push({ id, name, category, price, quantity: 1 });
+        }
+        renderCart();
+        showToast(`Added ${name} to cart!`, 'success');
+    }
+    
+    function renderCart() {
+        const container = document.getElementById('cartItems');
+        const totalEl = document.getElementById('cartTotal');
+        
+        if (cart.length === 0) {
+            container.innerHTML = '<p class="empty-cart-msg">Your cart is empty.</p>';
+            totalEl.innerText = '₹0.00';
+            return;
+        }
+        
+        container.innerHTML = '';
+        let total = 0;
+        
+        cart.forEach((item, index) => {
+            const subtotal = item.price * item.quantity;
+            total += subtotal;
+            
+            container.innerHTML += `
+                <div class="cart-item">
+                    <div class="item-info">
+                        <span class="qty">${item.quantity}x</span>
+                        <span class="name">${item.name}</span>
+                    </div>
+                    <div class="item-price">
+                        <span>₹${subtotal.toFixed(2)}</span>
+                        <button onclick="removeOne(${index})" class="del-btn">×</button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        totalEl.innerText = `₹${total.toFixed(2)}`;
+    }
+    
+    function removeOne(index) {
+        if (cart[index].quantity > 1) {
+            cart[index].quantity -= 1;
+        } else {
+            cart.splice(index, 1);
+        }
+        renderCart();
+    }
+    
+    function clearCart() {
+        cart = [];
+        renderCart();
+    }
+    
+    function checkout() {
+        if (cart.length === 0) {
+            showToast("Cannot checkout an empty cart!", "error");
+            return;
+        }
+        
+        let total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        
+        fetch('/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cart: cart, total: total })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.msg, "success");
+                clearCart();
+                window.open(data.pdf_url, '_blank');
+                setTimeout(() => window.location.reload(), 2000);
+            } else {
+                showToast(data.msg, "error");
+            }
+        })
+        .catch(err => {
+            showToast("Server error during checkout", "error");
+        });
+    }
+    
+    function showToast(msg, type) {
+        const toast = document.getElementById('toast');
+        toast.innerText = msg;
+        toast.className = 'toast show ' + type;
+        setTimeout(() => toast.className = toast.className.replace('show', ''), 3000);
+    }
+</script>
+{% endblock %}
