@@ -52,5 +52,4 @@ Contributing
 License
 - This repository does not include a license file by default. Add a `LICENSE` if you intend to open-source this project.
 
-Contact
-- For questions or help, inspect the source files (`app.py`, `database.py`, `utils.py`) or reach out to the project owner.
+
