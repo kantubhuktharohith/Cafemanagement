@@ -49,6 +49,3 @@ Usage notes
 Contributing
 - Feel free to open issues or submit pull requests to add features, tests, or harden authentication.
 
-License
-
-
