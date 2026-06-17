@@ -50,6 +50,5 @@ Contributing
 - Feel free to open issues or submit pull requests to add features, tests, or harden authentication.
 
 License
-- This repository does not include a license file by default. Add a `LICENSE` if you intend to open-source this project.
 
 
