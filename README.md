@@ -14,7 +14,6 @@ Cafemanagement is a minimal cafe/point-of-sale management web application built 
 - SQLite or file-based storage (see `database.py`)
 
 **Getting started**
-
 Prerequisites
 - Python 3.10 or newer
 - pip
